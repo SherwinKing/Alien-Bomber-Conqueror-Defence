@@ -73,6 +73,15 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 PlayMode::~PlayMode() {
 }
 
+void PlayMode::reset_game() {
+	hp = init_hp;
+	score = 0;
+	for (auto bomb_transform: bomb_transforms) {
+		game_status = STOPPED;
+		reset_bomb_position(*bomb_transform);
+	}
+}
+
 void PlayMode::reset_bomb_position(Scene::Transform &bomb_transform) {
 	bomb_transform.position = bomb_init_transform->position;
 	bomb_transform.position[0] = (float)60 * ((double) mt()/(double)UINT32_MAX);
@@ -85,6 +94,7 @@ void PlayMode::reset_bomb_position(Scene::Transform &bomb_transform) {
 
 void PlayMode::bomb_explode(Scene::Transform &bomb_transform, float bomb_distance) {
 	hp -= (int32_t) std::max((double) 0, std::pow(10 - bomb_distance, 3));
+	hp = std::max(0, hp);
 	reset_bomb_position(bomb_transform);
 }
 
@@ -110,6 +120,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_r) {
+			key_r.downs += 1;
+			key_r.pressed = true;
+			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -123,6 +137,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_r) {
+			key_r.pressed = false;
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -170,6 +187,15 @@ void PlayMode::update(float elapsed) {
 		glm::vec3(0.0f, 0.0f, 1.0f)
 	);
 
+	// if game is in STOPPED status
+	if (game_status == STOPPED) {
+		if (key_r.downs > 0) {
+			game_status = ACTIVE;
+		} else {
+			return;
+		}
+	}
+
 	//move camera:
 	{
 
@@ -208,7 +234,6 @@ void PlayMode::update(float elapsed) {
 		if (left_click.pressed) {
 			glm::vec3 fire_line_dir = camera_to_bomb * glm::vec4(0, 0, 1, 0);
 			float intersection_indicator = std::pow(glm::dot(camera_position_in_bomb_space, fire_line_dir), 2) - std::pow(glm::length(camera_position_in_bomb_space), 2) + 1;
-			std::cout << intersection_indicator << std::endl;
 			if (intersection_indicator >= 0) {
 				bomb_explode(*bomb_transform, camera_to_bomb_distance);
 				score += camera_to_bomb_distance;
@@ -221,10 +246,16 @@ void PlayMode::update(float elapsed) {
 		if (glm::length(camera_position_in_bomb_space) < 0.5) {
 			bomb_explode(*bomb_transform, camera_to_bomb_distance);
 		}
+
+		// if player hp is 0
+		if (hp == 0) {
+			reset_game();
+		}
 	}
 
 	//reset button press counters:
 	left_click.pressed = false;
+	key_r.downs = 0;
 	left.downs = 0;
 	right.downs = 0;
 	up.downs = 0;
@@ -275,5 +306,14 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+
+		// start game guidance
+		std::string start_game_guidance = "Press R to start game";
+		if (game_status == STOPPED) {
+			lines.draw_text(start_game_guidance,
+				glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H + 0.5f, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+		}
 	}
 }

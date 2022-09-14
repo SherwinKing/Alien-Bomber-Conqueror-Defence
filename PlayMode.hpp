@@ -10,6 +10,8 @@
 #include<cmath>
 
 
+const int32_t init_hp = 30000;
+
 struct PlayMode : Mode {
 	PlayMode();
 	virtual ~PlayMode();
@@ -20,13 +22,21 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//other methods
+	void reset_game();
 	void reset_bomb_position(Scene::Transform &transform);
 	void bomb_explode(Scene::Transform &bomb_transform, float bomb_distance);
 
 	//----- game state -----
 
+	// game status
+	enum GameStatus : uint32_t{
+		STOPPED,
+		ACTIVE
+	};
+	GameStatus game_status = STOPPED;
+
 	// HP
-	int32_t hp = 30000;
+	int32_t hp = init_hp;
 	// score
 	uint32_t score = 0;
 	// bomb speed
@@ -39,7 +49,7 @@ struct PlayMode : Mode {
 	struct Button {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
-	} left, right, down, up, left_click;
+	} left, right, down, up, key_r, left_click;
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;

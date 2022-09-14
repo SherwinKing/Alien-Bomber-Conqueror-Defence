@@ -22,7 +22,7 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//other methods
-	void reset_game();
+	void restart_game();
 	void reset_bomb_position(Scene::Transform &transform);
 	void bomb_explode(Scene::Transform &bomb_transform, float bomb_distance);
 

@@ -123,9 +123,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
 		if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
 			SDL_SetRelativeMouseMode(SDL_TRUE);
-			left_click.pressed = true;
-			return true;
 		}
+		left_click.pressed = true;
+		return true;
 	} else if (evt.type == SDL_MOUSEBUTTONUP) {
 		left_click.pressed = false;
 		return true;
@@ -191,10 +191,21 @@ void PlayMode::update(float elapsed) {
 	}
 
 	for (auto bomb_transform: bomb_transforms) {
-		glm::vec3 camera_position_in_bomb_space = (bomb_transform->make_world_to_local() 
-			* glm::mat4(camera->transform->make_local_to_world()))
-			* glm::vec4(0, 0, 0, 1);
+		const static glm::vec4 camera_space_origin = glm::vec4(0, 0, 0, 1);
+		glm::mat4x3 camera_to_bomb = (bomb_transform->make_world_to_local() 
+			* glm::mat4(camera->transform->make_local_to_world()));
+		glm::vec3 camera_position_in_bomb_space = camera_to_bomb * camera_space_origin;
 		bomb_transform->position += 0.1f * glm::normalize(camera_position_in_bomb_space);
+
+		// if player shoot bomb
+		if (left_click.pressed) {
+			glm::vec3 fire_line_dir = camera_to_bomb * glm::vec4(0, 0, 1, 0);
+			float intersection_indicator = std::pow(glm::dot(camera_position_in_bomb_space, fire_line_dir), 2) - std::pow(glm::length(camera_position_in_bomb_space), 2) + 1;
+			std::cout << intersection_indicator << std::endl;
+			if (intersection_indicator >= 0) {
+				reset_bomb_position(*bomb_transform);
+			}
+		}
 
 		// if bomb hit player
 		if (glm::length(camera_position_in_bomb_space) < 0.5) {

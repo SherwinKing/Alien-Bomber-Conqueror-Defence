@@ -7,6 +7,7 @@
 #include <vector>
 #include <deque>
 #include <random>
+#include<cmath>
 
 
 struct PlayMode : Mode {

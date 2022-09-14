@@ -43,6 +43,10 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 		if (transform.name == "Hip.FL") hip = &transform;
 		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
 		else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
+		else if (transform.name == "Bomb") {
+			bomb_init_transform = &transform;
+			bomb_transforms.push_back(&transform);
+		}
 	}
 	if (hip == nullptr) throw std::runtime_error("Hip not found.");
 	if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
@@ -55,9 +59,28 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
+
+	for (int i = 0; i < 10; i++) {
+		scene.transforms.emplace_back();
+		Scene::Transform &transform = scene.transforms.back();
+		transform.name = transform.name + std::to_string(i);
+		reset_bomb_position(transform);
+		bomb_transforms.push_back(&transform);
+		add_drawable(scene, &transform, "Bomb");
+	}
 }
 
 PlayMode::~PlayMode() {
+}
+
+void PlayMode::reset_bomb_position(Scene::Transform &transform) {
+	transform.position = bomb_init_transform->position;
+	transform.position[0] = (float)60 * ((double) mt()/(double)UINT32_MAX);
+	transform.position[1] = 100;
+	transform.position[2] = (float)16 + 5 * ((double) mt()/(double)UINT32_MAX);
+	transform.rotation = bomb_init_transform->rotation;
+	transform.scale = bomb_init_transform->scale;
+	transform.parent = bomb_init_transform->parent;
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
@@ -100,8 +123,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
 		if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
 			SDL_SetRelativeMouseMode(SDL_TRUE);
+			left_click.pressed = true;
 			return true;
 		}
+	} else if (evt.type == SDL_MOUSEBUTTONUP) {
+		left_click.pressed = false;
+		return true;
 	} else if (evt.type == SDL_MOUSEMOTION) {
 		if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
 			glm::vec2 motion = glm::vec2(
@@ -159,6 +186,20 @@ void PlayMode::update(float elapsed) {
 		glm::vec3 frame_forward = -frame[2];
 
 		camera->transform->position += move.x * frame_right + move.y * frame_forward;
+		// camera->transform->position += 0.1f * frame_forward;
+		
+	}
+
+	for (auto bomb_transform: bomb_transforms) {
+		glm::vec3 camera_position_in_bomb_space = (bomb_transform->make_world_to_local() 
+			* glm::mat4(camera->transform->make_local_to_world()))
+			* glm::vec4(0, 0, 0, 1);
+		bomb_transform->position += 0.1f * glm::normalize(camera_position_in_bomb_space);
+
+		// if bomb hit player
+		if (glm::length(camera_position_in_bomb_space) < 0.5) {
+			reset_bomb_position(*bomb_transform);
+		}
 	}
 
 	//reset button press counters:

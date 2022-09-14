@@ -6,6 +6,8 @@
 
 #include <vector>
 #include <deque>
+#include <random>
+
 
 struct PlayMode : Mode {
 	PlayMode();
@@ -16,16 +18,26 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	//other methods
+	void reset_bomb_position(Scene::Transform &transform);
+
 	//----- game state -----
+
+	//random generator
+	std::mt19937 mt; 
 
 	//input tracking:
 	struct Button {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
-	} left, right, down, up;
+	} left, right, down, up, left_click;
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
+
+	//bomb_transforms
+	Scene::Transform* bomb_init_transform;
+	std::vector<Scene::Transform*> bomb_transforms;
 
 	//hexapod leg to wobble:
 	Scene::Transform *hip = nullptr;

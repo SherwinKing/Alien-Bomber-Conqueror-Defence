@@ -73,11 +73,11 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 PlayMode::~PlayMode() {
 }
 
-void PlayMode::reset_game() {
+void PlayMode::restart_game() {
 	hp = init_hp;
 	score = 0;
 	for (auto bomb_transform: bomb_transforms) {
-		game_status = STOPPED;
+		game_status = ACTIVE;
 		reset_bomb_position(*bomb_transform);
 	}
 }
@@ -191,7 +191,7 @@ void PlayMode::update(float elapsed) {
 	// if game is in STOPPED status
 	if (game_status == STOPPED) {
 		if (key_r.downs > 0) {
-			game_status = ACTIVE;
+			restart_game();
 		} else {
 			return;
 		}
@@ -250,7 +250,7 @@ void PlayMode::update(float elapsed) {
 
 		// if player hp is 0
 		if (hp == 0) {
-			reset_game();
+			game_status = STOPPED;
 		}
 	}
 

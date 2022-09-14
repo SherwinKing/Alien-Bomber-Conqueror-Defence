@@ -93,7 +93,8 @@ void PlayMode::reset_bomb_position(Scene::Transform &bomb_transform) {
 }
 
 void PlayMode::bomb_explode(Scene::Transform &bomb_transform, float bomb_distance) {
-	hp -= (int32_t) std::max((double) 0, std::pow(20 - bomb_distance, 3));
+	hp -= (int32_t) std::max((double) 0, (1000 / std::pow(0.75+bomb_distance/4, 3)));
+	// hp -= (int32_t) std::max((double) 0, std::pow(40 - bomb_distance, 3) / 16);
 	hp = std::max(0, hp);
 	reset_bomb_position(bomb_transform);
 }

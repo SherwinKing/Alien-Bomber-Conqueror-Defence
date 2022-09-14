@@ -84,9 +84,9 @@ void PlayMode::restart_game() {
 
 void PlayMode::reset_bomb_position(Scene::Transform &bomb_transform) {
 	bomb_transform.position = bomb_init_transform->position;
-	bomb_transform.position[0] = (float)60 * ((double) mt()/(double)UINT32_MAX);
+	bomb_transform.position[0] = (float) -40 + 80 * ((double) mt()/(double)UINT32_MAX);
 	bomb_transform.position[1] = 100;
-	bomb_transform.position[2] = (float)16 + 5 * ((double) mt()/(double)UINT32_MAX);
+	bomb_transform.position[2] = (float)16 - 40 + 60 * ((double) mt()/(double)UINT32_MAX);
 	bomb_transform.rotation = bomb_init_transform->rotation;
 	bomb_transform.scale = bomb_init_transform->scale;
 	bomb_transform.parent = bomb_init_transform->parent;

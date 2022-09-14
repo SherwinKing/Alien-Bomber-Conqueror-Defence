@@ -73,14 +73,19 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 PlayMode::~PlayMode() {
 }
 
-void PlayMode::reset_bomb_position(Scene::Transform &transform) {
-	transform.position = bomb_init_transform->position;
-	transform.position[0] = (float)60 * ((double) mt()/(double)UINT32_MAX);
-	transform.position[1] = 100;
-	transform.position[2] = (float)16 + 5 * ((double) mt()/(double)UINT32_MAX);
-	transform.rotation = bomb_init_transform->rotation;
-	transform.scale = bomb_init_transform->scale;
-	transform.parent = bomb_init_transform->parent;
+void PlayMode::reset_bomb_position(Scene::Transform &bomb_transform) {
+	bomb_transform.position = bomb_init_transform->position;
+	bomb_transform.position[0] = (float)60 * ((double) mt()/(double)UINT32_MAX);
+	bomb_transform.position[1] = 100;
+	bomb_transform.position[2] = (float)16 + 5 * ((double) mt()/(double)UINT32_MAX);
+	bomb_transform.rotation = bomb_init_transform->rotation;
+	bomb_transform.scale = bomb_init_transform->scale;
+	bomb_transform.parent = bomb_init_transform->parent;
+}
+
+void PlayMode::bomb_explode(Scene::Transform &bomb_transform, float bomb_distance) {
+	hp -= (int32_t) std::max((double) 0, std::pow(10 - bomb_distance, 3));
+	reset_bomb_position(bomb_transform);
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
@@ -127,7 +132,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		left_click.pressed = true;
 		return true;
 	} else if (evt.type == SDL_MOUSEBUTTONUP) {
-		left_click.pressed = false;
 		return true;
 	} else if (evt.type == SDL_MOUSEMOTION) {
 		if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
@@ -195,7 +199,10 @@ void PlayMode::update(float elapsed) {
 		glm::mat4x3 camera_to_bomb = (bomb_transform->make_world_to_local() 
 			* glm::mat4(camera->transform->make_local_to_world()));
 		glm::vec3 camera_position_in_bomb_space = camera_to_bomb * camera_space_origin;
-		bomb_transform->position += 0.1f * glm::normalize(camera_position_in_bomb_space);
+		bomb_transform->position += bomb_speed * glm::normalize(camera_position_in_bomb_space);
+
+		// distance between player (at camera) and bomb
+		float camera_to_bomb_distance = glm::length(camera_position_in_bomb_space);
 
 		// if player shoot bomb
 		if (left_click.pressed) {
@@ -203,17 +210,21 @@ void PlayMode::update(float elapsed) {
 			float intersection_indicator = std::pow(glm::dot(camera_position_in_bomb_space, fire_line_dir), 2) - std::pow(glm::length(camera_position_in_bomb_space), 2) + 1;
 			std::cout << intersection_indicator << std::endl;
 			if (intersection_indicator >= 0) {
-				reset_bomb_position(*bomb_transform);
+				bomb_explode(*bomb_transform, camera_to_bomb_distance);
+				score += camera_to_bomb_distance;
+				// as you get higher score, the game gets harder
+				bomb_speed = 0.1f + 0.0001f * score;
 			}
 		}
 
 		// if bomb hit player
 		if (glm::length(camera_position_in_bomb_space) < 0.5) {
-			reset_bomb_position(*bomb_transform);
+			bomb_explode(*bomb_transform, camera_to_bomb_distance);
 		}
 	}
 
 	//reset button press counters:
+	left_click.pressed = false;
 	left.downs = 0;
 	right.downs = 0;
 	up.downs = 0;
@@ -254,12 +265,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		std::string game_info_string = "Score: " + std::to_string(score)+ ", HP: " + std::to_string(hp);
+		lines.draw_text(game_info_string,
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text(game_info_string,
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));

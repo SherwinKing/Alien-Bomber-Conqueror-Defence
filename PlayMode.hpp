@@ -21,8 +21,16 @@ struct PlayMode : Mode {
 
 	//other methods
 	void reset_bomb_position(Scene::Transform &transform);
+	void bomb_explode(Scene::Transform &bomb_transform, float bomb_distance);
 
 	//----- game state -----
+
+	// HP
+	int32_t hp = 30000;
+	// score
+	uint32_t score = 0;
+	// bomb speed
+	float bomb_speed = 0.1f;
 
 	//random generator
 	std::mt19937 mt; 

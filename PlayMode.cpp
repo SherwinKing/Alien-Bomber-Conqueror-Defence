@@ -288,9 +288,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		std::string start_game_guidance = "Press R to start game";
 		if (game_status == STOPPED) {
 			lines.draw_text(start_game_guidance,
-				glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H + 0.5f, 0.0),
+				glm::vec3(-aspect + 0.5f * H, -1.0 + 0.1f * H + 0.5f, 0.0),
 				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 		}
 	}
 }

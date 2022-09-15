@@ -12,4 +12,8 @@ How To Play:
 
 Earth is under attack! Some aliens named "Bombers" from the planet "Bomb" are throwing tons of bombs to earth. You (as the player) are now earth's only hope. Move your mouse to aim the bombs, and left click to eliminate them. When a bomb is eliminated, it will **explode**, and causing damage if you are close (the closer you are, the more damage you will take). Everytime you eliminate a bomb, you obtain some points which are added to your score. The further the bomb is when you eliminate one, the more points you get. Try to stay a live longer and get a higher score!
 
+Acknowledgement:
+
+The arms (or legs) of the alien are from the original assets `hexapod.blend` provided by the base codes. All the other parts of the scene are original.
+
 This game was built with [NEST](NEST.md).
